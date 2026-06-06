@@ -76,10 +76,11 @@ const HK="meme_hist_v1";
 function lh(){try{return JSON.parse(localStorage.getItem(HK)||"{}")}catch{return{}}}
 function sh(h){try{localStorage.setItem(HK,JSON.stringify(h))}catch{}}
 function updStat(){document.getElementById("stat").textContent="оценено: "+Object.keys(lh()).length}
-async function hf(file){
-  const b=await file.arrayBuffer();
-  const d=await crypto.subtle.digest("SHA-256",b);
-  return Array.from(new Uint8Array(d)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("")
+function hf(file){
+  /* Синхронный хэш — не рвёт цепочку жеста, video.play() работает */
+  const s=file.name+'|'+file.size+'|'+file.lastModified;
+  let h=5381;for(let i=0;i<s.length;i++)h=Math.imul(h,33)^s.charCodeAt(i);
+  return (h>>>0).toString(16)+'_'+file.size.toString(36)
 }
 function pick(){
   const rs=CFG.reactions,t=rs.reduce((s,r)=>s+r.chance,0);
