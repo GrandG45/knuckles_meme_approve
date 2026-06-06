@@ -11,7 +11,7 @@ body { font-family: Courier New, Arial, sans-serif; background: #0f0f0f; color: 
   padding: 2rem 1rem; width: 100%; max-width: 720px; min-height: 100vh;
   text-align: center; gap: 1rem; }
 .screen.on { display: flex; }
-#char-img { width: 550px; height: 550x; object-fit: contain; border-radius: 12px; }
+#char-img { width: 550px; height: 550px; object-fit: contain; border-radius: 12px; }
 h1 { font-size: 2.2rem; font-weight: 800; color: #dc2626; }
 .sub { color: #888; font-size: 1rem; max-width: 400px; line-height: 1.6; }
 #dz { width: 100%; max-width: 420px; padding: 1.8rem 1rem;
@@ -121,7 +121,8 @@ function showR(r){
     if(r.kind==="normal")btn.style.display="";
   }
   if(r.video){
-    vid.style.display=""; vid.src=r.video; vid.loop=false;
+    vid.style.display="block"; /* ИСПРАВЛЕНО: было "" — откатывалось к CSS display:none */
+    vid.src=r.video; vid.loop=false;
     vid.onended=()=>{
       if(r.kind==="special"&&pdur)startCD(pdur);
       else if(r.kind==="effect")playFX(dsc,r.effect,r.desc);
