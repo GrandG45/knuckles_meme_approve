@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Наклз Оценивает</title>
+<style>* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Courier New, Arial, sans-serif; background: #0f0f0f; color: #fff;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.screen { display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 2rem 1rem; width: 100%; max-width: 720px; min-height: 100vh;
+  text-align: center; gap: 1rem; }
+.screen.on { display: flex; }
+#char-img { width: 550px; height: 550x; object-fit: contain; border-radius: 12px; }
+h1 { font-size: 2.2rem; font-weight: 800; color: #dc2626; }
+.sub { color: #888; font-size: 1rem; max-width: 400px; line-height: 1.6; }
+#dz { width: 100%; max-width: 420px; padding: 1.8rem 1rem;
+  border: 2px dashed #dc262644; border-radius: 14px;
+  background: #dc26260d; color: #555; cursor: pointer;
+  transition: 0.2s; user-select: none; }
+#dz:hover, #dz.drag { border-color: #dc2626; background: #dc26261a; color: #ccc; }
+#dz small { display: block; margin-top: 6px; font-size: 0.75rem; color: #2e2e2e; }
+#stat { font-family: monospace; font-size: 0.8rem; color: #1e1e1e; }
+#vid { width: 100%; max-width: 620px; max-height: 340px; border-radius: 10px; display: none; }
+#timer { font-size: 2rem; font-weight: 900; color: #ff6b35; min-height: 2.8rem; }
+#desc { font-size: 1.3rem; font-weight: 700; max-width: 540px; line-height: 1.5;
+  color: #ddd; transition: opacity 0.3s; }
+#next-btn { display: none; padding: 0.65rem 2rem; background: #1a1a1a;
+  color: #dc2626; border: 1.5px solid #dc262655;
+  border-radius: 10px; font-family: inherit; font-size: 1rem;
+  cursor: pointer; transition: 0.15s; }
+#next-btn:hover { background: #222; border-color: #dc2626; }
+@keyframes fx-glitch {
+  0%,100%{transform:translate(0);text-shadow:none}
+  20%{transform:translate(-3px,1px);text-shadow:-2px 0 #f00,2px 0 #0ff}
+  40%{transform:translate(3px,-1px) skewX(2deg);text-shadow:2px 0 #f00,-2px 0 #0ff}
+  60%{transform:translate(-2px,2px);text-shadow:-3px 0 #f0f,3px 0 #0f0}
+  80%{transform:translate(2px,-2px) skewX(-1deg);text-shadow:2px 0 #ff0,-2px 0 #00f}
+}
+@keyframes fx-rainbow {
+  0%{color:#f00}14%{color:#f80}28%{color:#ff0}42%{color:#0f0}57%{color:#0ff}71%{color:#08f}85%{color:#a0f}100%{color:#f00}
+}
+@keyframes fx-zoom {
+  0%{transform:scale(0.05);opacity:0}
+  65%{transform:scale(1.18);opacity:1}
+  100%{transform:scale(1)}
+}
+@keyframes fx-shake {
+  0%,100%{transform:translateX(0)}
+  15%,45%,75%{transform:translateX(-10px)}
+  30%,60%,90%{transform:translateX(10px)}
+}
+@keyframes fx-neon {
+  0%,100%{text-shadow:0 0 5px #fff,0 0 10px #fff,0 0 20px #dc2626,0 0 40px #dc2626,0 0 80px #dc2626}
+  50%{text-shadow:0 0 2px #fff,0 0 4px #dc2626}
+}
+</style>
+</head>
+<body>
+<div id="welcome" class="screen on">
+<img id="char-img" src="assets/char.png" alt="">
+<h1>Наклз Оценивает</h1>
+<p class="sub">Покажи мне свой мем!</p>
+<div id="dz"><p>Нажми чтобы выбрать мем</p><small>или перетащи файл сюда</small></div>
+<input type="file" id="fi" style="display:none">
+<p id="stat"></p>
+</div>
+<div id="reaction" class="screen">
+<video id="vid" playsinline></video>
+<div id="timer"></div>
+<p id="desc"></p>
+<button id="next-btn">← Следующий мем</button>
+</div>
+<script>const CFG={"reactions": [{"id": "ef644945", "name": "2D Одобрил", "desc": "Наклзу сменили стилистику?", "chance": 5, "video": "assets/reaction_ef644945.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "4ffd20c3", "name": "ВСЕ МЕМЫ ЗАБАНЕНЫ", "desc": "Мем слишком ужасен, пожинай плоды...", "chance": 1, "video": "assets/reaction_4ffd20c3.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "ed6a111d", "name": "Это... JOJO REFERENCE?!", "desc": "ЖОЖО ЖОЖО ЖОЖО", "chance": 1, "video": "assets/reaction_ed6a111d.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "b5f356e8", "name": "Approve'", "desc": "Французы одобряют!", "chance": 1, "video": "assets/reaction_b5f356e8.webm", "kind": "effect", "duration": 0, "effect": "typewriter"}, {"id": "e1e6bfdf", "name": "МИССИЯ ПРОВАЛЕНА", "desc": "Миссия провалена! Мем отклонен!", "chance": 1, "video": "assets/reaction_e1e6bfdf.webm", "kind": "special", "duration": 15, "effect": ""}, {"id": "b6fa5a54", "name": "Одобрено 10 раз", "desc": "ДЕСЯТЬ РАЗ?! ЭТО ЛЕГЕНДАРНО!", "chance": 1, "video": "assets/reaction_b6fa5a54.webm", "kind": "effect", "duration": 0, "effect": "rainbow"}, {"id": "652b6c6e", "name": "Наклз принял свой мем", "desc": "Самолайк сделан. Мем не принят.", "chance": 1, "video": "assets/reaction_652b6c6e.webm", "kind": "special", "duration": 15, "effect": ""}, {"id": "b5775ad3", "name": "PERSONA ОДОБРЕНИЕ", "desc": "ЭТО ЖЕ PERSONA! ВОУ!", "chance": 1, "video": "assets/reaction_b5775ad3.webm", "kind": "effect", "duration": 0, "effect": "zoom"}, {"id": "82c5dc94", "name": "Наклз не уверен в ответе", "desc": "Наклз не знает как реагировать на твой мем. Попробуй еще раз.", "chance": 1, "video": "assets/reaction_82c5dc94.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "9b2fc169", "name": "Мем был почти принят", "desc": "Наклза зацепила какая-то деталь, но этого не хватило. По новой.", "chance": 1, "video": "assets/reaction_9b2fc169.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "57ce0eb6", "name": "Мем принят без раздумий", "desc": "ПРИНЯТО БЕЗ РАЗДУМИЙ, НЕВЕРОЯТНО!", "chance": 1, "video": "assets/reaction_57ce0eb6.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "aa02c600", "name": "Одобрено без штампа", "desc": "Официально мем не принят, но Наклз разрешил", "chance": 5, "video": "assets/reaction_aa02c600.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "a8c1119b", "name": "Наклз одобрил не тот мем", "desc": "По случайности Наклз одобрил не тот мем. Это твой шанс.", "chance": 3, "video": "assets/reaction_a8c1119b.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "acaa0ccd", "name": "Одобрено в плохое время", "desc": "Что... Санс Undertale?", "chance": 1, "video": "assets/reaction_acaa0ccd.webm", "kind": "effect", "duration": 0, "effect": "typewriter"}, {"id": "18e9e182", "name": "Мем не прочесть", "desc": "Наклз не может прочесть твой мем. Попробуй еще.", "chance": 1, "video": "assets/reaction_18e9e182.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "93f1ad36", "name": "Наклз не может остановиться", "desc": "Наклз не может остановиться одобрять твой мем.", "chance": 1, "video": "assets/reaction_93f1ad36.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "b9d3af20", "name": "Не переживай, мем одобрен.", "desc": "Штамп поставили, так что мем одобрен.", "chance": 5, "video": "assets/reaction_b9d3af20.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "ec7fb467", "name": "ДВОЙНОЕ ОДОБРЕНИЕ?!", "desc": "МЕМ ОДОБРЕН ДВАЖДЫ, ЭТО ВОЙДЕТ В ИСТОРИЮ!", "chance": 1, "video": "assets/reaction_ec7fb467.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "36d51bfd", "name": "Эггман управляет мемами", "desc": "О нет, Эггман забрал управление под свой контроль! Вот незадача!", "chance": 1, "video": "assets/reaction_36d51bfd.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "318d7095", "name": "Отличный аргумент! Принято!", "desc": "Наклза устроил мем, одобрено.", "chance": 5, "video": "assets/reaction_318d7095.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "65e31946", "name": "Детский мем", "desc": "Твой мем подойдет разве что детям. Переделать.", "chance": 1, "video": "assets/reaction_65e31946.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "248c4b77", "name": "Не уследить за мемами.", "desc": "Наклз не может уследить за всеми мемами. Попробуй позже.", "chance": 1, "video": "assets/reaction_248c4b77.webm", "kind": "special", "duration": 15, "effect": ""}, {"id": "8faffaab", "name": "Наклз сломался", "desc": "Твой мем нагрузил Наклза. Никаких одобрений.", "chance": 1, "video": "assets/reaction_8faffaab.webm", "kind": "special", "duration": 30, "effect": ""}, {"id": "f9ac3799", "name": "Нелегальный мем", "desc": "Твой мем настолько ужасен, что тебе запретили делать подобный мем совсем.", "chance": 3, "video": "assets/reaction_f9ac3799.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "226aa7f2", "name": "Взрыв", "desc": "Кажется он перестарался...", "chance": 1, "video": "assets/reaction_226aa7f2.webm", "kind": "special", "duration": 10, "effect": ""}, {"id": "f6d057e4", "name": "Ушел с работы", "desc": "Мем слишком ужасен, что Наклз покинул свой пост...", "chance": 1, "video": "assets/reaction_f6d057e4.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "5b797086", "name": "Отказ с увольнением", "desc": "Мем настолько ужасен, что Наклз не только не одобрил мем, но и уволился...", "chance": 1, "video": "assets/reaction_5b797086.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "3470d4aa", "name": "DOOM ОДОБРЕНИЕ", "desc": "ДАЖЕ ЧЕРТИ ТРЯСУТСЯ ОТ ЭТОГО МЕМА!", "chance": 1, "video": "assets/reaction_3470d4aa.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "09a8e327", "name": "Одобрено?", "desc": "Мем судя по всему одобрен?...", "chance": 5, "video": "assets/reaction_09a8e327.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "34298ba1", "name": "ФНАФ ОДОБРЕНИЕ", "desc": "ФИОЛЕТОВЫЙ НАКЛЗ ОДОБРИЛ ЭТОТ ПРИКОЛ 87", "chance": 1, "video": "assets/reaction_34298ba1.webm", "kind": "effect", "duration": 0, "effect": "glitch"}, {"id": "8dae9885", "name": "SCATMAN ОДОБРИЛ", "desc": "Па пу пэ по па па да...", "chance": 1, "video": "assets/reaction_8dae9885.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "9b98a3f3", "name": "Наклз незнает", "desc": "Наклзу трудно оценить этот мем. Попробуй позже.", "chance": 1, "video": "assets/reaction_9b98a3f3.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "4aa42eb3", "name": "Мем одобрен", "desc": "Все хорошо. Мем принят.", "chance": 20, "video": "assets/reaction_4aa42eb3.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "16d75f20", "name": "Наклз перегружен", "desc": "Твой мем сломал мозг Наклза! Что ты наделал!", "chance": 1, "video": "assets/reaction_16d75f20.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "c00eb7a2", "name": "Мем был заминирован", "desc": "Не знаю умышленно ты или нет, но Наклз пока не может одобрять мемы...", "chance": 1, "video": "assets/reaction_c00eb7a2.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "1944d223", "name": "Мем сложно понять", "desc": "Наклзу явно нужно время что бы переосмыслить твой мем. Приходи позже.", "chance": 1, "video": "assets/reaction_1944d223.webm", "kind": "special", "duration": 30, "effect": ""}, {"id": "0bd25b13", "name": "Мем легален", "desc": "Одобрено или нет не ясно, но мем теперь легальный.", "chance": 5, "video": "assets/reaction_0bd25b13.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "28ccadb2", "name": "Мем вызывает много эмоций", "desc": "Этот мем возмутителен! Это фарс! Этот плёвый плям!", "chance": 1, "video": "", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "9a52552e", "name": "СКРИМЕР", "desc": "Бу. Испугался?)", "chance": 1, "video": "assets/reaction_9a52552e.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "bf10082c", "name": "Мем убил Наклза", "desc": "Мем разбил Наклза наповал. Что ты наделал...", "chance": 1, "video": "assets/reaction_bf10082c.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "deac0456", "name": "Rick Rolled", "desc": "Тебя Зарикроллили))", "chance": 1, "video": "assets/reaction_deac0456.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "d4aa1eac", "name": "МЕМ YAHOO", "desc": "Твой мем одобрен Наклзом из Нинтендо. Осторожнее с ним, а то засудят...", "chance": 3, "video": "assets/reaction_d4aa1eac.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "ccda301a", "name": "МЕМ", "desc": "МЕМ", "chance": 1, "video": "assets/reaction_ccda301a.webm", "kind": "special", "duration": 1, "effect": ""}, {"id": "21f30f0b", "name": "МЕМ НЕ ПРИНЯТ И НЕ ОДОБРЕН", "desc": "Наклз настолько не решился в ответе, что и ушел...", "chance": 1, "video": "assets/reaction_21f30f0b.webm", "kind": "special", "duration": 5, "effect": ""}, {"id": "f77d4aeb", "name": "БОЛЬШЕ НИКАКИХ МЕМОВ!", "desc": "Твой мем убедил Наклза запретить все мемы интернета. Может это и к лучшему...", "chance": 1, "video": "assets/reaction_f77d4aeb.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "be5cadef", "name": "На сегодня без одобрений", "desc": "Никаких одобрений мемов сегодня. Уходи.", "chance": 1, "video": "assets/reaction_be5cadef.webm", "kind": "special", "duration": 60, "effect": ""}, {"id": "a2530297", "name": "Нет.", "desc": "Нет. Просто нет.", "chance": 10, "video": "assets/reaction_a2530297.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "d95c7b79", "name": "ROBLOX одобрил", "desc": "Это что, ROBLOX?", "chance": 1, "video": "assets/reaction_d95c7b79.webm", "kind": "effect", "duration": 0, "effect": "typewriter"}, {"id": "503e0462", "name": "RONALDINO SOCCSIRE", "desc": "КАКОГО ХРЕНА ЗДЕСЬ ФУТБОЛ?!", "chance": 1, "video": "assets/reaction_503e0462.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "8edb5c86", "name": "Соник?", "desc": "Мем одобрил Соник? Что-то новенькое...", "chance": 3, "video": "assets/reaction_8edb5c86.webm", "kind": "normal", "duration": 0, "effect": ""}, {"id": "9078b458", "name": "В штампе кончились чернила", "desc": "Чернил нет что бы одобрить мем. Попробуй позже.", "chance": 1, "video": "", "kind": "special", "duration": 30, "effect": ""}, {"id": "30d4343e", "name": "КОШМАР!", "desc": "Что это за ужас?! Что с тобой не так?!", "chance": 5, "video": "assets/reaction_30d4343e.webm", "kind": "effect", "duration": 0, "effect": "shake"}, {"id": "a0c06f8f", "name": "Вверх", "desc": "Вверх", "chance": 1, "video": "assets/reaction_a0c06f8f.webm", "kind": "special", "duration": 1, "effect": ""}, {"id": "4e73c381", "name": "Мемов слишком много", "desc": "Наклз проверяет много мемов прямо сейчас. Ты пока в очереди.", "chance": 1, "video": "assets/reaction_4e73c381.webm", "kind": "special", "duration": 40, "effect": ""}, {"id": "000adf11", "name": "Че за хуйня...", "desc": "Че за хуйня...", "chance": 1, "video": "assets/reaction_000adf11.webm", "kind": "special", "duration": 1, "effect": ""}, {"id": "7190e3af", "name": "Наклз изчез", "desc": "А ГДЕ? КУДА БЛЯТЬ?!", "chance": 1, "video": "assets/reaction_7190e3af.webm", "kind": "special", "duration": 5, "effect": ""}]};
+const HK="meme_hist_v1";
+function lh(){try{return JSON.parse(localStorage.getItem(HK)||"{}")}catch{return{}}}
+function sh(h){try{localStorage.setItem(HK,JSON.stringify(h))}catch{}}
+function updStat(){document.getElementById("stat").textContent="оценено: "+Object.keys(lh()).length}
+async function hf(file){
+  const b=await file.arrayBuffer();
+  const d=await crypto.subtle.digest("SHA-256",b);
+  return Array.from(new Uint8Array(d)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("")
+}
+function pick(){
+  const rs=CFG.reactions,t=rs.reduce((s,r)=>s+r.chance,0);
+  if(!t)return rs[0];
+  let x=Math.random()*t;
+  for(const r of rs){x-=r.chance;if(x<=0)return r}
+  return rs[rs.length-1]
+}
+let locked=false,cdt=null,fxt=null,pdur=null;
+async function evaluate(file){
+  if(locked)return;
+  const hash=await hf(file),hist=lh();
+  let r=null;
+  if(hist[hash]){
+    r=CFG.reactions.find(x=>x.id===hist[hash])||null;
+    if(r&&r.kind!=="normal")r=null;
+  }
+  if(!r){
+    r=pick();
+    if(r.kind==="normal"){hist[hash]=r.id;sh(hist)}
+  }
+  showR(r)
+}
+function showR(r){
+  document.getElementById("welcome").classList.remove("on");
+  document.getElementById("reaction").classList.add("on");
+  const vid=document.getElementById("vid");
+  const tmr=document.getElementById("timer");
+  const dsc=document.getElementById("desc");
+  const btn=document.getElementById("next-btn");
+  tmr.textContent=""; btn.style.display="none";
+  vid.style.display="none"; vid.src=""; vid.onended=null;
+  if(r.kind==="effect"){
+    dsc.textContent=""; dsc.style.opacity="0"; dsc.style.animation="none";
+    pdur=null;
+  } else {
+    dsc.textContent=r.desc||""; dsc.style.opacity="1"; dsc.style.animation="none";
+    pdur=r.kind==="special"?Math.max(1,r.duration||5):null;
+    if(r.kind==="normal")btn.style.display="";
+  }
+  if(r.video){
+    vid.style.display=""; vid.src=r.video; vid.loop=false;
+    vid.onended=()=>{
+      if(r.kind==="special"&&pdur)startCD(pdur);
+      else if(r.kind==="effect")playFX(dsc,r.effect,r.desc);
+    };
+    vid.play().catch(()=>{});
+  } else {
+    if(r.kind==="special")startCD(pdur);
+    else if(r.kind==="effect")playFX(dsc,r.effect,r.desc);
+  }
+}
+function startCD(sec){
+  clearInterval(cdt);locked=true;
+  let l=sec;
+  document.getElementById("timer").textContent=l;
+  cdt=setInterval(()=>{
+    l--;
+    if(l<=0){clearInterval(cdt);locked=false;
+      document.getElementById("timer").textContent="";
+      document.getElementById("next-btn").style.display="";
+    }else{document.getElementById("timer").textContent=l}
+  },1000)
+}
+function showBtn(){document.getElementById("next-btn").style.display=""}
+function playFX(el,type,text){
+  clearTimeout(fxt);clearInterval(fxt);
+  locked=true;
+  el.style.animation="none"; el.style.color=""; el.style.textShadow="";
+  el.textContent=""; el.style.opacity="1";
+  switch(type){
+    case"typewriter":fxTypewriter(el,text);break;
+    case"glitch":fxGlitch(el,text);break;
+    case"rainbow":fxRainbow(el,text);break;
+    case"zoom":fxZoom(el,text);break;
+    case"matrix":fxMatrix(el,text);break;
+    case"shake":fxShake(el,text);break;
+    case"neon":fxNeon(el,text);break;
+    default:el.textContent=text;locked=false;showBtn();
+  }
+}
+function fxTypewriter(el,text){
+  let i=0,d=Math.min(80,Math.max(25,3000/text.length));
+  const t=setInterval(()=>{
+    el.textContent+=text[i++];
+    if(i>=text.length){clearInterval(t);locked=false;fxt=setTimeout(showBtn,500)}
+  },d)
+}
+function fxGlitch(el,text){
+  el.textContent=text;
+  el.style.animation="fx-glitch 0.22s infinite";
+  fxt=setTimeout(()=>{el.style.animation="none";locked=false;showBtn()},2500)
+}
+function fxRainbow(el,text){
+  el.textContent=text;
+  el.style.animation="fx-rainbow 0.5s linear infinite";
+  fxt=setTimeout(()=>{el.style.animation="none";el.style.color="";locked=false;showBtn()},3000)
+}
+function fxZoom(el,text){
+  el.textContent=text;
+  el.style.animation="fx-zoom 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards";
+  fxt=setTimeout(()=>{locked=false;showBtn()},1500)
+}
+function fxMatrix(el,text){
+  const ch="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+  let iter=0,steps=text.length*5;
+  const t=setInterval(()=>{
+    el.textContent=[...text].map((c,i)=>i<iter/5?c:ch[Math.floor(Math.random()*ch.length)]).join("");
+    if(++iter>steps){clearInterval(t);el.textContent=text;locked=false;fxt=setTimeout(showBtn,400)}
+  },35)
+}
+function fxShake(el,text){
+  el.textContent=text;
+  el.style.animation="fx-shake 0.4s ease infinite";
+  fxt=setTimeout(()=>{el.style.animation="none";locked=false;showBtn()},2200)
+}
+function fxNeon(el,text){
+  el.textContent=text;
+  el.style.animation="fx-neon 0.7s ease-in-out infinite";
+  fxt=setTimeout(()=>{el.style.animation="none";el.style.textShadow="";locked=false;showBtn()},3500)
+}
+function showW(){
+  clearInterval(cdt);clearTimeout(fxt);clearInterval(fxt);
+  locked=false;pdur=null;
+  const vid=document.getElementById("vid"),dsc=document.getElementById("desc");
+  vid.pause();vid.src="";vid.style.display="none";
+  dsc.style.animation="none";dsc.style.color="";dsc.style.textShadow="";
+  document.getElementById("timer").textContent="";
+  document.getElementById("next-btn").style.display="none";
+  document.getElementById("reaction").classList.remove("on");
+  document.getElementById("welcome").classList.add("on");
+  updStat()
+}
+const dz=document.getElementById("dz"),fi=document.getElementById("fi");
+dz.addEventListener("click",()=>fi.click());
+fi.addEventListener("change",e=>{if(e.target.files[0])evaluate(e.target.files[0]);fi.value=""});
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag")});
+dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
+dz.addEventListener("drop",e=>{
+  e.preventDefault();dz.classList.remove("drag");
+  const f=e.dataTransfer.files[0];if(f&&!locked)evaluate(f)
+});
+document.getElementById("next-btn").addEventListener("click",showW);
+updStat();
+</script>
+</body>
+</html>
