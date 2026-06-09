@@ -119,7 +119,7 @@ function showR(r){
   } else {
     dsc.textContent=r.desc||""; dsc.style.opacity="1"; dsc.style.animation="none";
     pdur=r.kind==="special"?Math.max(1,r.duration||5):null;
-    if(r.kind==="normal")btn.style.display="";
+    if(r.kind==="normal")btn.style.display="block";
   }
   if(r.video){
     vid.style.display="block"; /* ИСПРАВЛЕНО: было "" — откатывалось к CSS display:none */
